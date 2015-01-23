@@ -1,2 +1,9 @@
-# spysniff
-Sniffing - the pythonic way. 
+# sPySniff
+
+```
+virtualenv .
+source bin/activate
+pip install pypcap
+pip install dpkt
+pip install scapy
+```

@@ -1,0 +1,54 @@
+# MAC
+.DS_Store
+
+# VIM 
+*.bak
+*.swp
+
+# GENERAL
+*.lock
+
+# TEX
+*.aux
+*.glo
+*.idx
+*.log
+*.toc
+*.ist
+*.acn
+*.acr
+*.alg
+*.bbl
+*.blg
+*.dvi
+*.glg
+*.gls
+*.ilg
+*.ind
+*.lof
+*.lot
+*.maf
+*.mtc
+*.mtc1
+*.out
+*.synctex.gz
+*.pdf
+
+# PYTHON
+*.exec
+*.pyc
+
+# PYCHARM
+.idea/
+
+# PYTHON DOC
+html/
+report/
+__pycache__/
+_build/
+# Virtualenv
+lib
+include
+bin
+share/
+.Python
