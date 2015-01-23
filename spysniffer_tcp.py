@@ -1,61 +1,110 @@
-#Packet sniffer in python for Linux
-#Sniffs only incoming TCP packet
- 
 import socket, sys
 from struct import *
- 
-#create an INET, STREAMing socket
+
+"""
+SpySniffer is a unique low level Python sniffer that can sniff TCP packets and
+filters out by certain, and customizable criterias. 
+"""
+
+SRC_PORT = 1234567
+DST_PORT = 1234567
+
+
 try:
+    # We use AF_INET as the famliy, and set SOCK_RAW as the type of the socket. 
+    # IPPROTO_TCP as the protocol 
     s = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_TCP)
-except socket.error , msg:
-    print 'Socket could not be created. Error Code : ' + str(msg[0]) + ' Message ' + msg[1]
-    sys.exit()
- 
-# receive a packet
+except socket.error, msg:
+    print 'Socket error raised: %s %s' % (str(msg[0]), str(msg[1]))
+    sys.exit(1)
+
 while True:
-    packet = s.recvfrom(65565)
-     
-    #packet string from tuple
-    packet = packet[0]
-     
-    #take first 20 characters for the ip header
-    ip_header = packet[0:20]
-     
-    #now unpack them :)
-    iph = unpack('!BBHHHBBH4s4s' , ip_header)
-     
+    # We will receive the packet 
+    packet = s.recvfrom(65565)[0]
+
+    # We unpack the header accordingly by using the struct.unpack method 
+    # https://docs.python.org/2/library/struct.html
+    # The exclamation mark at the beginning stands for network (=big endian). 
+    # B for unsigned char (1 byte)
+    # H for unsigned short (2 byte)
+    # 4s for char[4] which will just be interpreted as str in Python
+    """
+    IP Header (http://tools.ietf.org/html/rfc791):
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Version|  IHL  |Type of Service|          Total Length         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |         Identification        |Flags|      Fragment Offset    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  Time to Live |    Protocol   |         Header Checksum       |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                       Source Address                          |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Destination Address                        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Options                    |    Padding    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+    """
+    # the IP header consists of 5 * 4 bytes, whose structure is above. 
+    iph = unpack('!BBHHHBBH4s4s' , packet[0:20])
+    
     version_ihl = iph[0]
     version = version_ihl >> 4
     ihl = version_ihl & 0xF
      
     iph_length = ihl * 4
      
-    ttl = iph[5]
     protocol = iph[6]
-    s_addr = socket.inet_ntoa(iph[8]);
-    d_addr = socket.inet_ntoa(iph[9]);
+    src_addr = socket.inet_ntoa(iph[8]);
+    dst_addr = socket.inet_ntoa(iph[9]);
      
-    print 'Version : ' + str(version) + ' IP Header Length : ' + str(ihl) + ' TTL : ' + str(ttl) + ' Protocol : ' + str(protocol) + ' Source Address : ' + str(s_addr) + ' Destination Address : ' + str(d_addr)
-     
+    """
+      TCP Header Format (https://tools.ietf.org/html/rfc793)
+
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |          Source Port          |       Destination Port        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                        Sequence Number                        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Acknowledgment Number                      |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  Data |           |U|A|P|R|S|F|                               |
+   | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+   |       |           |G|K|H|T|N|N|                               |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |           Checksum            |         Urgent Pointer        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Options                    |    Padding    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             data                              |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+  Data Offset:  4 bits
+    The number of 32 bit words in the TCP Header.  This indicates where
+    the data begins.  The TCP header (even one including options) is an
+    integral number of 32 bits long.
+    """
+
     tcp_header = packet[iph_length:iph_length+20]
-     
-    #now unpack them :)
     tcph = unpack('!HHLLBBHHH' , tcp_header)
      
-    source_port = tcph[0]
-    dest_port = tcph[1]
-    sequence = tcph[2]
-    acknowledgement = tcph[3]
+    src_port = tcph[0]
+    dst_port = tcph[1]
     doff_reserved = tcph[4]
     tcph_length = doff_reserved >> 4
      
-    print 'Source Port : ' + str(source_port) + ' Dest Port : ' + str(dest_port) + ' Sequence Number : ' + str(sequence) + ' Acknowledgement : ' + str(acknowledgement) + ' TCP header length : ' + str(tcph_length)
-     
+    h_offset = iph_length + tcph_length * 4
     h_size = iph_length + tcph_length * 4
     data_size = len(packet) - h_size
      
     #get data from the packet
-    data = packet[h_size:]
-     
-    print 'Data : ' + data
-    print
+    data = packet[h_offset:]
+
+    if src_port == SRC_PORT or dst_port == DST_PORT:
+        print 'TCP Packet (version %s) src_addr = %s, dst_addr = %s src/dst port = (%d, %d)' % (version, src_addr, dst_addr, src_port, dst_port)
+        print 'Data: ', data
