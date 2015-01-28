@@ -1,14 +1,16 @@
 import socket, sys
 from struct import *
+import string
+import binascii
 
 """
 SpySniffer is a unique low level Python sniffer that can sniff TCP packets and
 filters out by certain, and customizable criterias. 
 """
 
-SRC_PORT = 1234567
-DST_PORT = 1234567
-
+# SRC_PORT = int(sys.argv[1])
+# DST_PORT = SRC_PORT
+allowed_ports = [8888, 9999]
 
 try:
     # We use AF_INET as the famliy, and set SOCK_RAW as the type of the socket. 
@@ -105,6 +107,10 @@ while True:
     #get data from the packet
     data = packet[h_offset:]
 
-    if src_port == SRC_PORT or dst_port == DST_PORT:
-        print 'TCP Packet (version %s) src_addr = %s, dst_addr = %s src/dst port = (%d, %d)' % (version, src_addr, dst_addr, src_port, dst_port)
-        print 'Data: ', data
+    if src_port in allowed_ports or dst_port in allowed_ports:
+        if len(data) > 0:
+            print 'TCP Packet (version %s) src_addr = %s, dst_addr = %s src/dst port = (%d, %d)' % (version, src_addr, dst_addr, src_port, dst_port)
+            print 'Data: '
+            print data, len(data)
+            print binascii.hexlify(data).decode('ASCII')
+
