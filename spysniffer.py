@@ -1,3 +1,4 @@
+#!/usr/bin/python
 import socket, sys
 from struct import *
 import string
@@ -10,7 +11,9 @@ filters out by certain, and customizable criterias.
 
 # SRC_PORT = int(sys.argv[1])
 # DST_PORT = SRC_PORT
-allowed_ports = [8888, 9999]
+allowed_ports = []
+for i in range(1, len(sys.argv)):
+		allowed_ports.append(int(sys.argv[i]))	
 
 try:
     # We use AF_INET as the famliy, and set SOCK_RAW as the type of the socket. 
