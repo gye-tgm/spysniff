@@ -9,8 +9,6 @@ SpySniffer is a unique low level Python sniffer that can sniff TCP packets and
 filters out by certain, and customizable criterias. 
 """
 
-# SRC_PORT = int(sys.argv[1])
-# DST_PORT = SRC_PORT
 allowed_ports = []
 for i in range(1, len(sys.argv)):
 		allowed_ports.append(int(sys.argv[i]))	
@@ -104,10 +102,7 @@ while True:
     tcph_length = doff_reserved >> 4
      
     h_offset = iph_length + tcph_length * 4
-    h_size = iph_length + tcph_length * 4
-    data_size = len(packet) - h_size
      
-    #get data from the packet
     data = packet[h_offset:]
 
     if src_port in allowed_ports or dst_port in allowed_ports:
